@@ -3,9 +3,9 @@ title: "Problem set 5"
 author: "Dili Maduabum, Joshua Bailey"
 date: "2024-02-16"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -192,47 +192,18 @@ weather_film <- film |>
 ```
 ## 15
 ```{r}
-www_columns <- str_subset(colnames(weather_film), "www_")
-
-df <- weather_film 
-regressors <-  glue("~ {weekend_dummy} + {week_dummy} + {year_dummy} + {holiday_dummy}")
-
-for (columns in www_columns) {
-  model <- paste(columns, regressors)
-  #Below has to be the same! if not it doesn't store the updates...
-  df <- df |> 
-    mutate(!!columns := residuals(lm(as.formula(model), data = df))) 
-}
-
-
-df
+#www_columns <- str_subset(colnames(weather_film), "www_")
+#
+#df <- weather_film 
+#regressors <-  glue("~ {weekend_dummy} + {week_dummy} + {year_dummy} + #{holiday_dummy}")
+#
+#for (columns in www_columns) {
+#  model <- paste(columns, regressors)
+#  #Below has to be the same! if not it doesn't store the updates...
+#  df <- df |> 
+#    mutate(!!columns := residuals(lm(as.formula(model), data = df))) 
+#}
+#
+#
+#df
 ```
-
-```{r}
-
-# Subset column names with "www_"
-www_columns <- str_subset(colnames(weather_film), "www_")
-
-# Create a copy of the original dataframe
-df <- weather_film
-
-# Define regressors
-regressors <- glue("~ {weekend_dummy} + {week_dummy} + {year_dummy} + {holiday_dummy}")
-
-# Iterate over www_columns
-for (column in www_columns) {
-  # Construct the full model formula
-  model <- paste(column, regressors)
-  
-  # Fit linear regression model and compute residuals
-  df <- df %>%
-    mutate(!!column := residuals(lm(as.formula(model), data = .))) 
-}
-
-# Print the updated dataframe
-print(df)
-```
-
-
-
-
