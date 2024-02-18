@@ -1,0 +1,30 @@
+"0",""
+"0","# Subset column names with ""www_"""
+"0","www_columns <- str_subset(colnames(weather_film), ""www_"")"
+"0",""
+"0","# Create a copy of the original dataframe"
+"0","df <- weather_film"
+"0",""
+"0","# Define regressors"
+"0","regressors <- glue(""~ {weekend_dummy} + {week_dummy} + {year_dummy} + {holiday_dummy}"")"
+"0",""
+"0","# Iterate over www_columns"
+"0","for (column in www_columns) {"
+"0","  # Construct the full model formula"
+"0","  model <- paste(column, regressors)"
+"0","  "
+"0","  # Fit linear regression model and compute residuals"
+"0","  df <- df %>%"
+"0","    mutate(!!column := residuals(lm(as.formula(model), data = .))) "
+"0","}"
+"1","[1m[33mError[39m in `mutate()`:[22m
+[38;5;255m[36mℹ[38;5;255m In argument: `www_snow_0 = residuals(lm(as.formula(model), data =
+  .))`.[39m
+[1mCaused by error in `lm.fit()`:[22m
+[33m![39m 0 (non-NA) cases
+Backtrace:
+[90m  1. [39mdf %>% ...
+[90m 10. [39m[1mstats[22m::lm(as.formula(model), data = .)
+[90m 11. [39mstats::lm.fit(...)
+[90m 12. [39m[1mbase[22m::stop(""0 (non-NA) cases"")
+"
