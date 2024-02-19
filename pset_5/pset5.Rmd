@@ -3,9 +3,9 @@ title: "Problem set 5"
 author: "Dili Maduabum, Joshua Bailey"
 date: "2024-02-16"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -187,23 +187,48 @@ weather
 weather_film <- film |> 
   left_join(weather,
             #combine on dates, automatically filters out dates that don't match
-            by = c("sat_day" = "www_sat_date"))
+            by = c("movie_date" = "www_sat_date"))
 
+weather_film |> 
+  select(contains("www"))
 ```
 ## 15
-```{r}
-#www_columns <- str_subset(colnames(weather_film), "www_")
-#
-#df <- weather_film 
-#regressors <-  glue("~ {weekend_dummy} + {week_dummy} + {year_dummy} + #{holiday_dummy}")
-#
-#for (columns in www_columns) {
-#  model <- paste(columns, regressors)
-#  #Below has to be the same! if not it doesn't store the updates...
-#  df <- df |> 
-#    mutate(!!columns := residuals(lm(as.formula(model), data = df))) 
-#}
-#
-#
-#df
+```{r warning = FALSE}
+# Select columns with names containing "www_"
+www_columns <- str_subset(colnames(weather_film), "www_")
+
+# Create a copy of the original dataframe
+df <- weather_film 
+
+# Define regression formula with dummy variables
+regressors <-  glue("~ {weekend_dummy} + {week_dummy} + {year_dummy} + {holiday_dummy}")
+
+# Iterate over columns with names containing "www_"
+for (columns in www_columns) {
+  # Construct regression formula
+  model <- paste(columns, regressors)
+  
+  # Generate names for predicted values and residuals
+  pred_name <- paste("pred", columns, sep = "_")
+  resid_name <- paste("resid", columns, sep = "_")
+  
+  # Add predicted values and residuals to the dataframe
+  df <- df |> 
+      mutate(!!pred_name := predict(lm(as.formula(model), data = df), df)) |> 
+    #residuals = column - predicted_value_for_column
+      mutate(!!resid_name := eval(parse(text = columns)) - eval(parse(text = pred_name)))
+}
+
+#remove the predicted and original values, keeping only the residuals
+new_weather <- df |> 
+  select(-c(contains("pred_www"), starts_with("www")))
 ```
+
+## 16
+
+```{r}
+
+```
+
+
+
