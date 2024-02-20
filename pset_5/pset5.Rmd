@@ -3,9 +3,9 @@ title: "Problem set 5"
 author: "Dili Maduabum, Joshua Bailey"
 date: "2024-02-16"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -110,7 +110,7 @@ film <- dummy_cols(films_used_date, select_columns = 'release_yr')
 film[, c("title", "release_yr", "release_yr_2009", "release_yr_2010")]
 ```
 **11.h**
-```{r warning=FALSE}
+```{r warning=FALSE, message = FALSE}
 
 #combine the weekends 
 film |> 
@@ -137,6 +137,7 @@ film |>
 
 
 ```
+
 ## 12
 NOT NEEDED
 
@@ -226,9 +227,31 @@ new_weather <- df |>
 
 ## 16
 
-```{r}
+```{r warning=FALSE}
+#combine
+mod2 <- glue("tickets ~ {weekend_dummy} + {week_dummy} + {year_dummy} + {holiday_dummy}")
 
+#fit a regression model
+week_2_data <- new_weather |> 
+  filter(week_2 == 1)
+
+reg_mod2 <- lm(as.formula(mod1), data = week_2_data)
+
+
+new_weather_film <- new_weather |> 
+  mutate(pred_tickets_wk_2 = predict(reg_mod2, new_weather)) |> 
+  mutate(abnormal_viewership_wk_2 = tickets - pred_tickets_wk_2)
+
+
+new_weather_film[, c("tickets", "pred_tickets_wk_2", "week_2", "abnormal_viewership_wk_2")]
 ```
+## 17
+**17.a**
 
+## 21
+```{r message=FALSE}
+movies <- read_csv("data/movie_lens_20m/movie.csv")
+ratings <- read_csv("data/movie_lens_20m/rating.csv")
+```
 
 
