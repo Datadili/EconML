@@ -3,9 +3,10 @@ title: "Problem set 5"
 author: "Dili Maduabum, Joshua Bailey"
 date: "2024-02-16"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -14,14 +15,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r library/Data loading, include= FALSE, echo = FALSE}
 #install.packages('fastDummies')
-
+#install.packages('leaps')
 library(fastDummies) #for dummy variables
 library(glmnet)
+library(glmnetUtils)
 library(tidyverse) # for pipe operators
 library(haven) #for importing dta datasets
 library(gt)
 library(fixest) #for fixed effects
 library(glue) # glue
+library(modelsummary)
+library(leaps) #stepwise regression
 #load the data 
 films <- read_dta("data/films_day.dta")
 #View(films)
@@ -48,7 +52,7 @@ round_12_date <- as.Date("2009-03-27")
 days_before <- 17984 #number under 12 Rounds "date" column
 
 # Days prior to the 
-reference_date <- round_12_date - days_before
+reference_date <- round_12_date - days_before + 1
 
 # Print the new date
 print(reference_date)
@@ -67,25 +71,18 @@ films_used_d[, c("title", "movie_date")]
 **11.e**
 ```{r}
 #first using sat_date to get the date for each saturday
-films_used_date <- films_used_d |> 
-  mutate(sat_day = as.Date(reference_date +  sat_date)) |> 
-  #putting the release_date in the 4th column
-  select(title, production_budget, release_yr, 
-         movie_date, sat_day, everything())
+films_used_date <- films_used_d |>
+  #getting the day for saturday
+  mutate(sat_day = reference_date + sat_date) |>
+  mutate(sat_day_of_week = wday(sat_day, label = TRUE)) |>
+  mutate(
+    fri_dummy = ifelse(movie_date == sat_day - 1, 1, 0),
+    sat_dummy = ifelse(movie_date == sat_day , 1, 0),
+    #reasoning... there was no movie released on Sunday....
+    sun_dummy = ifelse(movie_date == sat_day + 1, 1, 0) 
+  ) |> arrange(title)
 
- #making new columns
-films_used_date <- films_used_date |> 
-mutate(sat_dummy = ifelse(movie_date == sat_day, 1, 0), 
-       #one day before saturday is friday
-       fri_dummy = ifelse(movie_date == sat_day - 1, 1, 0),
-       #one day 
-       sun_dummy = ifelse(movie_date == sat_day + 1, 1, 0)) |> 
-  #rearranging... not needed
-  select(title, production_budget, release_yr, movie_date, 
-         sat_day,sat_dummy, fri_dummy, sun_dummy, everything())
-
-films_used_date[, c("title", "movie_date","sat_day" 
-                    ,"fri_dummy", "sat_dummy", "sun_dummy")]
+films_used_date[, c("title", "movie_date","sat_day" ,"fri_dummy", "sat_dummy", "sun_dummy")]
 ```
 **11.f**
 ```{r}
@@ -93,13 +90,13 @@ films_used_date[, c("title", "movie_date","sat_day"
 films_used_date <- films_used_date |>  
   arrange(title, sat_day) |> 
   group_by(title) |> 
-  # Assign numeric labels to unique elements of sat_day within each title
-  mutate(week = as.integer(factor(sat_day)))  
+  # Assign numeric labels to unique elements of sat_date within each title
+  mutate(week = as.integer(factor(sat_date)))
 
 
 #Now using fast dummies...
 films_used_date <- dummy_cols(films_used_date, select_columns = 'week')
-films_used_date[, c("title", "movie_date" ,"week_1", "week_2")]
+films_used_date[, c("title", "movie_date" ,"week_1", "week_2", "week_3")]
 ```
 
 **11.g**
@@ -111,16 +108,17 @@ film[, c("title", "release_yr", "release_yr_2009", "release_yr_2010")]
 ```
 **11.h**
 ```{r warning=FALSE, message = FALSE}
-
 #combine the weekends 
-film |> 
+temp <- film |> 
  mutate(weekend = case_when(
    sat_dummy == 1 ~ "Saturday",
    fri_dummy == 1 ~ "Friday",
-   sun_dummy == 1 ~ "Sunday"
+   sun_dummy == 1 ~ "Sunday",
  )) |> 
   group_by(week, weekend) |> 
-  summarize(mean = mean(tickets))|> 
+  summarize(mean = mean(tickets, na.rm = TRUE))
+
+temp |> 
   ggplot(aes(x = week, y = mean, color = as.factor(weekend))) +
   geom_point() +
   geom_line() +
@@ -133,9 +131,6 @@ film |>
   scale_x_continuous(breaks = scales::pretty_breaks(n = 6)) +  # Set x-axis ticks
   scale_y_continuous(breaks = scales::pretty_breaks(n = 6)) +  # Set y-axis ticks
   theme_bw()
-
-
-
 ```
 
 ## 12
@@ -173,7 +168,7 @@ film[, c("tickets","pred_tickets", "abnormal_viewership", "sat_day")]
 ```
 ## 14
 ```{r}
-weather <- read_dta("data/weather_collapsed_all.dta")
+weather <- read_dta("data/weather_collapsed_day.dta")
 
 #adding www to the column names
 original_cols <- colnames(weather) 
@@ -188,10 +183,11 @@ weather
 weather_film <- film |> 
   left_join(weather,
             #combine on dates, automatically filters out dates that don't match
-            by = c("movie_date" = "www_sat_date"))
+            by = c("movie_date" = "www_date",
+                   "sat_day" = "www_sat_date"))
 
 weather_film |> 
-  select(contains("www"))
+  select(movie_date, sat_day, contains("www"))
 ```
 ## 15
 ```{r warning = FALSE}
@@ -211,7 +207,7 @@ for (columns in www_columns) {
   
   # Generate names for predicted values and residuals
   pred_name <- paste("pred", columns, sep = "_")
-  resid_name <- paste("resid", columns, sep = "_")
+  resid_name <- paste("abnormal", columns, sep = "_")
   
   # Add predicted values and residuals to the dataframe
   df <- df |> 
@@ -226,32 +222,123 @@ new_weather <- df |>
 ```
 
 ## 16
-
 ```{r warning=FALSE}
 #combine
-mod2 <- glue("tickets ~ {weekend_dummy} + {week_dummy} + {year_dummy} + {holiday_dummy}")
-
 #fit a regression model
 week_2_data <- new_weather |> 
   filter(week_2 == 1)
 
+#using the same regression 
 reg_mod2 <- lm(as.formula(mod1), data = week_2_data)
 
 
-new_weather_film <- new_weather |> 
-  mutate(pred_tickets_wk_2 = predict(reg_mod2, new_weather)) |> 
+new_weather_film_wk2 <- week_2_data |> 
+  mutate(pred_tickets_wk_2 = predict(reg_mod2, week_2_data)) |> 
   mutate(abnormal_viewership_wk_2 = tickets - pred_tickets_wk_2)
 
 
-new_weather_film[, c("tickets", "pred_tickets_wk_2", "week_2", "abnormal_viewership_wk_2")]
+new_weather_film_wk2[, c("tickets", "pred_tickets_wk_2", "week_2", "abnormal_viewership_wk_2")]
 ```
 ## 17
-**17.a**
+```{r message = FALSE, warning=FALSE}
+#Mak
+#subsetting the data to just be week 1
+week_1_data <- new_weather |> 
+  filter(week_1 == 1)
+
+#creating the "abnormal viewerships in week 1"------------
+mod1 <- glue("tickets ~ {weekend_dummy} + {week_dummy} + {year_dummy} + {holiday_dummy}")
+
+#fit a regression model
+reg_mod1 <- lm(as.formula(mod1), data = week_1_data)
+
+new_weather_film_wk1 <- week_1_data |> 
+  mutate(pred_tickets_wk_1 = predict(reg_mod1, week_1_data)) |> 
+  mutate(abnormal_viewership_wk1 = tickets - pred_tickets_wk_1)
+
+```
+
+**17.a**  OLS;
+```{r}
+abnormal_weather_wk1_names <-
+  str_subset(colnames(new_weather_film_wk1), "abnormal_www")
+
+abnormal_weather_wk1 <-
+  str_c(abnormal_weather_wk1_names, collapse = "+")
+
+ols_glue <- glue("abnormal_viewership_wk1 ~ {abnormal_weather_wk1}")
+ols_mod <- lm(as.formula(ols_glue),
+     new_weather_film_wk1)
+
+#modelsummary(list(ols_mod), output = "gt")
+```
+**17.b** 
+```{r forward ,warning= FALSE, message= FALSE}
+#subset the data to include the variables of interest
+leaps_data <- new_weather_film_wk1 |> 
+  select(c(abnormal_viewership_wk1, all_of(abnormal_weather_wk1_names)))
+
+forward <- regsubsets(abnormal_viewership_wk1 ~ ., 
+           data = leaps_data, method = "forward")
+
+# Get summary of the models
+summary_forward <- summary(forward)
+
+# Find the index of the model with the highest R-squared Adjusted
+best_model_index_fwd <- which.max(summary_forward$adjr2) #9th model has the highest
+
+# Get the names of predictors (coef) in the best model (9), without the intercept([-1])
+best_adjr_predictors <- names(coef(forward, id = best_model_index_fwd)[-1])
+
+# Print the selected predictors and the corresponding R-squared Adjusted value
+best_adjr_predictors
+
+#running regressions based on the model from foward (adj R^2)
+regs_fwd <- str_c(best_adjr_predictors, collapse = " + ")
+
+fwd_glue <- glue("abnormal_viewership_wk1 ~ {regs_fwd}")
+
+fwd_mod <- lm(as.formula(fwd_glue), data = new_weather_film_wk1)
+
+```
+**17.c**
+```{r}
+#only show the last steps (trace = 0)
+backward <- step(ols_mod, direction = "backward",trace=0)
+best_bkwd_predictors <- names(coefficients(backward)[-1])
+
+best_bkwd_predictors
+
+#running regressions based on the model from backward
+regs_bkwd <- str_c(best_bkwd_predictors, collapse = " + ")
+
+bkwd_glue <- glue("abnormal_viewership_wk1 ~ {regs_bkwd}")
+
+bkwd_mod <- lm(as.formula(bkwd_glue), data = new_weather_film_wk1)
+```
+**17.d**
+\textit{i}
+```{r}
+lasso_mod <- cv.glmnet(
+  x = as.matrix(new_weather_film_wk1 |>
+                   select(all_of(abnormal_weather_wk1_names))),
+  y = new_weather_film_wk1 |>
+    pull(abnormal_viewership_wk1), #pull gets the numeric values
+  alpha = 1, # Lasso penalty
+  nfolds = 5 # 5 fold cross validation
+)
+
+new_weather_film_wk1 |> 
+  mutate(pred = predict(lasso_mod, as.matrix(new_weather_film_wk1 |>
+                   select(all_of(abnormal_weather_wk1_names))), s = "lambda.min")) 
+```
+
+
 
 ## 21
 ```{r message=FALSE}
-movies <- read_csv("data/movie_lens_20m/movie.csv")
-ratings <- read_csv("data/movie_lens_20m/rating.csv")
+#movies <- read_csv("data/movie_lens_20m/movie.csv")
+#ratings <- read_csv("data/movie_lens_20m/rating.csv")
 ```
 
 
