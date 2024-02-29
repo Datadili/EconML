@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r library/Data loading, include= FALSE, echo = FALSE}
 #install.packages('fastDummies')
 #install.packages('leaps')
+#install.packages('kableExtra')
 #tinytex::install_tinytex()
 
 library(fastDummies) #for dummy variables
@@ -29,6 +30,9 @@ library(fixest) #for fixed effects
 library(glue) # glue
 library(modelsummary)
 library(leaps) #stepwise regression
+library(knitr) #has kable, used for latex
+library(kableExtra)
+
 #load the data 
 films <- read_dta("data/films_day.dta")
 #View(films)
@@ -249,9 +253,6 @@ weather_film <- film |>
             #combine on dates, automatically filters out dates that don't match
             by = c("movie_date" = "www_date"))
 
-#test <- weather_film |> 
-#  arrange(title) |> 
-#  select(title, movie_date, sat_day, contains("www"))
 ```
 ## 15
 ```{r warning = FALSE}
@@ -369,6 +370,7 @@ fwd_mod <- lm(as.formula(fwd_glue), data = new_weather_film_wk1)
 ```{r}
 #only show the last steps (trace = 0)
 backward <- step(ols_mod, direction = "backward",trace=0)
+#name of the coefficients (without the intercept)
 best_bkwd_predictors <- names(coefficients(backward)[-1])
 
 best_bkwd_predictors
@@ -383,9 +385,12 @@ bkwd_mod <- lm(as.formula(bkwd_glue), data = new_weather_film_wk1)
 **17.d**
 \textit{i}
 ```{r}
+#making a matrix of the predictor variables
+abnormal_vars <- as.matrix(new_weather_film_wk1 |>
+                select(all_of(abnormal_weather_wk1_names)))
+#making the ridge model 
 ridge_mod <- cv.glmnet(
-  x = as.matrix(new_weather_film_wk1 |>
-                select(all_of(abnormal_weather_wk1_names))),
+  x = abnormal_vars,
   y = new_weather_film_wk1 |>
     pull(abnormal_viewership_wk1), #pull gets the numeric values
   alpha = 0, # Ridge penalty
@@ -395,22 +400,28 @@ ridge_mod <- cv.glmnet(
 #lambda that minimizes the cross validation error
 nfold_ridge <- ridge_mod$lambda.min
 
-coefs_nfold_ridge <- coef(ridge_mod, s = nfold_ridge)
+#get the coefficients (no intercept)
+no_inter_nfold_ridge <- coef(ridge_mod, s = nfold_ridge)[-1, ]
 
+#coefs that aren't 0
+coefs_nfold_ridge <- no_inter_nfold_ridge[no_inter_nfold_ridge != 0] 
 ```
 \textit{ii}
 ```{r}
 # Find lambda within 1 standard deviation of the minimum lambda (storind estimates for now. Will predict with model later)
 nfold_ridge_1se <- ridge_mod$lambda.1se
 
-coefs_nfold_ridge_1se <- coef(ridge_mod, s = nfold_ridge_1se)
+#get the coefficients (no intercept)
+no_inter_nfold_ridge_1se <- coef(ridge_mod, s = nfold_ridge_1se)[-1, ]
+
+#coefs that aren't 0
+coefs_nfold_ridge_1se <- no_inter_nfold_ridge_1se[no_inter_nfold_ridge_1se != 0] 
 ```
 **17.e**
 \textit{i}
 ```{r}
 lasso_mod <- cv.glmnet(
-  x = as.matrix(new_weather_film_wk1 |>
-                select(all_of(abnormal_weather_wk1_names))),
+  x = abnormal_vars,
   y = new_weather_film_wk1 |>
     pull(abnormal_viewership_wk1), #pull gets the numeric values
   alpha = 1, # Lasso penalty
@@ -419,14 +430,222 @@ lasso_mod <- cv.glmnet(
 
 #lambda that minimizes the cross validation error
 nfold_lasso = lasso_mod$lambda.min
+
+#get the coefficients (no intercept)
+no_inter_nfold_lasso <- coef(lasso_mod, s = nfold_lasso)[-1, ]
+
+#coefs that aren't 0
+coefs_nfold_lasso <- no_inter_nfold_lasso[no_inter_nfold_lasso != 0] 
 ```
 \textit{ii}
 ```{r}
 # Find lambda within 1 standard deviation of the minimum lambda
 nfold_lasso_1se <- lasso_mod$lambda.1se
+
+#get the coefficients (no intercept)
+no_inter_nfold_lasso_1se <- coef(lasso_mod, s = nfold_lasso_1se)[-1, ]
+
+#coefs that aren't 0
+coefs_nfold_lasso_1se <- no_inter_nfold_lasso_1se[no_inter_nfold_lasso_1se != 0] 
 ```
 \textit{iii}
+Note: Could not find lambdas with 1 or 2, regressors. Finding 3, 4, 5 regressors for the remaining questions... 
+```{r}
+#making a function to find minimum lambda that has a certain number of regressors
+min_lamba_regressors <- function(num_of_regressors) {
+  # Create an empty list to store lambda
+  lambda_list<- list()
+  for (lasso_value in lasso_mod$lambda){
+    #get the coefficients (no intercept)
+    no_intercept_coefs <- coef(lasso_mod, s = lasso_value)[-1, ]
+    #coefs that aren't 0
+    coefs_lasso_value <- no_intercept_coefs[no_intercept_coefs != 0] 
+    #if the number of coeffiecients in a lambda value is ---, append
+    if (length(coefs_lasso_value) == num_of_regressors) {
+      lambda_list <- c(lambda_list, lasso_value)
+    }
+  }
+  #find the minimum in the appended list
+  minimum_lasso = min(unlist(lambda_list))
+  return(minimum_lasso)
+}
 
+lasso_3regs <- min_lamba_regressors(3)
+
+#get the coefficients (no intercept)
+no_inter_lasso_3regs <- coef(lasso_mod, s = lasso_3regs)[-1, ]
+
+#coefs that aren't 0
+coefs_lasso_3regs <- no_inter_lasso_3regs[no_inter_lasso_3regs != 0] 
+
+lasso_3regs
+```
+\textit{iv}
+```{r}
+lasso_4regs <- min_lamba_regressors(4)
+
+#get the coefficients (no intercept)
+no_inter_lasso_4regs <- coef(lasso_mod, s = lasso_4regs)[-1, ]
+
+#coefs that aren't 0
+coefs_lasso_4regs <- no_inter_lasso_3regs[no_inter_lasso_4regs != 0] 
+lasso_4regs
+```
+\textit{v}
+```{r}
+lasso_5regs <- min_lamba_regressors(5)
+#get the coefficients (no intercept)
+no_inter_lasso_5regs <- coef(lasso_mod, s = lasso_5regs)[-1, ]
+
+#coefs that aren't 0
+coefs_lasso_5regs <- no_inter_lasso_3regs[no_inter_lasso_5regs != 0] 
+lasso_5regs
+```
+
+**17.f**
+```{r predictors, warning = FALSE, message = FALSE}
+#making the fitted models
+weather_film_wk1 <- new_weather_film_wk1 |>
+  #add the new predicted columns
+  mutate(
+    #ols
+    pred_ols = predict(ols_mod, new_weather_film_wk1),
+    #prediction using coefficients obtained from the forward subset selection
+    pred_fwd = predict(fwd_mod, new_weather_film_wk1),
+    #prediction using coefficients obtained from the backward subset selection
+    pred_bkwd = predict(bkwd_mod, new_weather_film_wk1),
+    #the following model predictions are saved under [, "s1"]-----------
+      #abnormal coefs is the predictor variables
+    pred_ridge_5fold = predict(ridge_mod,
+                               newx = abnormal_vars,
+                               s = nfold_ridge)[, "s1"],
+    #ridge 5 fold, 1se away
+    pred_ridge_5fold_1se = predict(ridge_mod,
+                               newx = abnormal_vars,
+                               s = nfold_ridge_1se)[, "s1"],
+    #lasso, 5 fold
+    pred_lasso_5fold = predict(lasso_mod,
+                               newx = abnormal_vars,
+                               s = nfold_lasso)[, "s1"],
+    #lasso 5 fold, 1se away
+    pred_lasso_5fold_1se = predict(lasso_mod,
+                               newx = abnormal_vars,
+                               s = nfold_lasso_1se)[, "s1"],
+    #lasso, min lambda with 3 regressors
+    pred_lasso_3regs = predict(lasso_mod,
+                               newx = abnormal_vars,
+                               s = lasso_3regs)[, "s1"],
+    #lasso, min lambda with 4 regressors
+    pred_lasso_4regs = predict(lasso_mod,
+                               newx = abnormal_vars,
+                               s = lasso_4regs)[, "s1"],
+    #lasso, min lambda with 5 regressors
+    pred_lasso_5regs = predict(lasso_mod,
+                               newx = abnormal_vars,
+                               s = lasso_5regs)[, "s1"]
+  )
+
+#making a subset of just predictor values,
+#...by selecting the last 10 columns
+pred_mod_columns <- weather_film_wk1[tail(names(weather_film_wk1), 10)]
+
+#making a correlation matrix
+corrs <- round(cor(pred_mod_columns), 2)
+
+# Print the correlation matrix as a LaTeX table
+kable(corrs, format = "latex", booktabs = TRUE) |> 
+#scale (because of width) and keep the table at the position
+  kable_styling(latex_options= c("scale_down","HOLD_position"))
+```
+
+As we can see, they are very correlated with each other, except the with the model that returned zero regressors that has all NAs
+
+**17.g**
+```{r}
+cat(
+  " OLS:", length(abnormal_weather_wk1_names), "\n",
+  "Forward:", length(best_adjr_predictors), "\n",
+  "Backward:", length(best_bkwd_predictors), "\n",
+  "Ridge (5fold):", length(coefs_nfold_ridge), "\n",
+  "Ridge (5fold, 1se):", length(coefs_nfold_ridge_1se), "\n",
+  "Lasso (5fold):", length(coefs_nfold_lasso), "\n",
+  "Lasso (5fold, 1se):", length(coefs_nfold_lasso_1se), "\n",
+  "Lasso (3 regressors):", length(coefs_lasso_3regs), "\n",
+  "Lasso (4 regressors):", length(coefs_lasso_4regs), "\n",
+  "Lasso (5 regressors):", length(coefs_lasso_5regs)
+  )
+```
+
+**17.h**
+NOT NEEDED
+
+**17.i**
+This is a low-dimensional dataset because the number of predictors is smaller than the number of observations.
+
+## 18
+```{r}
+wk2_abnormal_data <- new_weather_film_wk2 |> 
+  select(title, abnormal_viewership_wk_2) |> 
+  arrange(title) |> 
+  #creating a row id to join nicely...
+  mutate(row_id = row_number())
+
+wk1_abnormal_data <-weather_film_wk1 |> 
+  #remove unwanted pred variables
+  select(-c("pred_tickets", "pred_tickets_wk_1")) |> 
+  select(title, abnormal_viewership_wk1, contains("pred")) |> 
+  arrange(title) |> 
+  mutate(row_id = row_number())
+  
+wk1_2 <- left_join(wk1_abnormal_data, wk2_abnormal_data, by = c("title", "row_id"))
+names_pred <- c(
+    "OLS",
+    "Forward",
+    "Backward",
+    "Ridge (5fold)",
+    "Ridge (5fold, 1se)",
+    "Lasso (5fold)",
+    "Lasso (5fold, 1se)",
+    "Lasso (3 regressors)",
+    "Lasso (4 regressors)",
+    "Lasso (5 regressors)"
+)
+
+fitted_columns <- str_subset(colnames(wk1_2), "pred")
+
+# Create a list to store results
+results <- list()
+
+# Loop through the fitted columns and run regressions
+for (fit_name in fitted_columns) {
+  # Run the regression
+  formula <- as.formula(paste("abnormal_viewership_wk_2 ~", fit_name))
+  lm_model <- lm(formula, data = wk1_2)
+  
+  # Extract coefficient
+  coefficient <- coef(lm_model)[2]  # Assuming the predictor variable is the second column
+  
+  # Store results
+  results[[fit_name]] <- coefficient
+}
+
+#model no instruments
+lm_model_no_inst <- lm(abnormal_viewership_wk_2 ~ abnormal_viewership_wk1, data = wk1_2)
+  
+  # Extract coefficient
+coefficient_no_inst <- coef(lm_model_no_inst)[2]
+  
+names(results) <- names_pred
+  
+# Print results
+for (fit_name in names(results)) {
+  #Name, coefficient
+  cat(fit_name, ":", results[[fit_name]], "\n")
+}
+cat("No Instrument:", coefficient_no_inst)
+```
+## 19
+In the context of the paper, these results show how the estimate of opening viewership in subsequent weeks varies by method. These coefficients alone aren't sufficient to distinguish social learning from social utility. The authors went on a test for social learning by asking whether the momentum generated from an exogenous shock to opening weekend viewership is stronger for higher-quality movies than for lower-quality movies.
 
 ## 20
 
@@ -437,17 +656,8 @@ Kuehn and Lampe collect underlying user ratings data and reconstruct the quality
 Kuehn and Lampe find strong evidence of social learning, contradicting Gilchrist and Sands' findings which suggested a limited role for learning and emphasized network (or demand) externalities. Kuehn and Lampe's results indicate that movies in the top quality tercile exhibit significant momentum, which is not observed for movies in the bottom tercile. This pattern is consistent with social learning but does not support the presence of network externalities. Kuehn and Lampe's tests on the flexibility of prior beliefs (comparing sequels to originals) and the size of social networks (comparing movies with larger shares of teenage viewers to those with smaller shares) further support the presence of social learning. They find momentum to be significant for originals and movies with larger shares of teenage viewers, especially within the PG-13 category, reinforcing the idea that social learning mechanisms are at play.
 
 
-
-
-## 21
-```{r message=FALSE}
-#movies <- read_csv("data/movie_lens_20m/movie.csv")
-#ratings <- read_csv("data/movie_lens_20m/rating.csv")
-```
-
-
 ## 22
-The paper isan economics paper because it examines the impact of social interactions on consumer behavior, specifically how early viewership influences later movie attendance through social spillovers. This topic falls within the realm of economics as it deals with understanding how individuals make decisions based on information and experiences shared within their social networks, and how these decisions aggregate to broader market outcomes. This is of fundamental interest to the field of economics.
+The paper is an economics paper because it examines the impact of social interactions on consumer behavior, specifically how early viewership influences later movie attendance through social spillovers. This topic falls within the realm of economics as it deals with understanding how individuals make decisions based on information and experiences shared within their social networks, and how these decisions aggregate to broader market outcomes. This is of fundamental interest to the field of economics.
 
 # Problem 2
 
