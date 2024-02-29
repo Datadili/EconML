@@ -1,5 +1,0 @@
-"0","#"
-"0","weather_film <- film |> "
-"0","  left_join(weather,"
-"0","            #combine on dates, automatically filters out dates that don't have..."
-"0","            by = c(""sat_day"" = ""www_sat_date""))"

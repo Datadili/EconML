@@ -1,7 +1,0 @@
-"0","films_used_d <- films_used |> "
-"0","  mutate(movie_date = as.Date(reference_date + date)) |> "
-"0","  #putting the release_date in the 4th column"
-"0","  select(title, production_budget, release_yr,"
-"0","         movie_date, sat_date, everything())"
-"0",""
-"0","films_used_d[, c(""title"", ""movie_date"")]"

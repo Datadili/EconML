@@ -3,9 +3,10 @@ title: "Problem set 5"
 author: "Dili Maduabum, Joshua Bailey"
 date: "2024-02-16"
 output:
+  pdf_document:
+    extra_dependencies: ['amsmath']
   html_document:
     df_print: paged
-  pdf_document: default
   word_document: default
 ---
 
@@ -16,6 +17,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r library/Data loading, include= FALSE, echo = FALSE}
 #install.packages('fastDummies')
 #install.packages('leaps')
+#tinytex::install_tinytex()
+
 library(fastDummies) #for dummy variables
 library(glmnet)
 library(glmnetUtils)
@@ -30,8 +33,68 @@ library(leaps) #stepwise regression
 films <- read_dta("data/films_day.dta")
 #View(films)
 ```
-## Problem 1
-1... 10
+# Problem 1
+
+## 1 
+
+Paper read!
+
+## 2
+
+Social utility refers to the benefit or satisfaction that individuals derive from their actions within a social context, not solely based on their own direct outcomes but also influenced by the actions and outcomes of others in their social network or community. It's a concept that encapsulates the notion that individuals' utility or happiness can be affected by the choices, behaviours, and welfare of others, in addition to their own personal outcomes. 
+
+Social learning is the process through which individuals acquire new information, behaviours, or strategies by observing or interacting with others. It involves the diffusion of knowledge and practices through a social network, where individuals can learn from the experiences and decisions of their peers. 
+
+The difference between social utility and social learning lies in their focus and mechanism. Social utility is about the derived satisfaction or benefit from being part of a social setting and how others' actions and outcomes affect an individual's own utility. Social learning, in contrast, is focused on the acquisition of knowledge, behaviours, or norms through the observation of or interaction with others. It is a mechanism for information diffusion and behavioural adaptation within a social network, emphasizing the cognitive aspect of learning from the environment and others' experiences.
+
+## 3
+
+Designing an ideal experiment to differentiate between social utility and social learning involves isolating the effects of social influence on individual decision-making from the effects of learning from others' experiences. The key distinction between these two mechanisms is the role of private versus public information and the subsequent effects on individual behavior. Social utility refers to the value individuals derive from conforming to the behaviors of their social group, often driven by network externalities, where the utility of a product or action increases as more people adopt it. On the other hand, social learning involves updating one's beliefs and decisions based on observing the actions and outcomes of others, under the assumption of imperfect information about the quality of an option.
+
+This requires a setup where individuals make decisions based not on learning about the quality of options from others but on the intrinsic value they place on aligning with the behaviors of their social group. Conversely, to isolate social learning, the experimental design should allow individuals to update their beliefs about the quality of options based on the observed choices of others, without the influence of wanting to conform to a group norm for its own sake.
+
+## 4
+
+A regression of the number of viewers in later weeks on the number of viewers in the first week would not have a causal interpretation due to potential unobserved confounding variables. One such confounder could be the inherent attractiveness or quality of the movie, which simultaneously impacts viewership in the first week and viewership in later weeks. For example, a highly anticipated movie might attract a large audience in its first week due to its perceived quality, marketing, or star cast, and continue to attract viewers in subsequent weeks through word of mouth or sustained interest. This inherent quality affects both initial and later viewership but is not directly measured in a simple regression, leading to confounded estimates of the effect of first-week viewership on later viewership.
+
+## 5
+
+The authors exploit weather variations as an instrumental variable. This approach relies on the assumption that weather variations are random and thus not directly related to the movie's quality, but can significantly affect viewership numbers due to people's preference for indoor activities, like watching movies, during bad weather. By using weather as an instrument, the analysis can isolate the effect of early viewership on later viewership, effectively controlling for the unobserved movie quality that might simultaneously influence viewership across different weeks. This methodology allows for a cleaner estimation of the causal effect of social spillovers on movie consumption, sidestepping the confounding effect of inherent movie quality.
+
+## 6
+
+If Gilchrist and Sands had observed the confounding variable and implemented selection on observables under the conditional independence assumption, they could have potentially estimated the causal effect of first-week viewership on later-week viewership. This approach assumes that controlling for observed confounders—variables that affect both the treatment (first-week viewership) and the outcome (later-week viewership)—would allow for a causal interpretation of the relationship between the two.
+
+However, merely observing the confounding variable and controlling for it would not necessarily help in distinguishing between social learning and social utility. The conditional independence assumption helps identify the causal effect of first-week viewership on later-week viewership, assuming all confounders are observed and correctly modeled. Still, this method alone does not differentiate whether the mechanism behind this effect is due to social learning (where individuals update their information based on others' actions) or social utility (where individuals derive utility from consuming a product in a social context, independent of information changes).
+
+To disentangle social learning from social utility, one would need to identify mechanisms that specifically relate to information transmission or shared consumption experiences. For example, if the effect of first-week viewership on later-week viewership was found to be stronger for movies with more ambiguous quality (suggesting viewers are updating their beliefs based on others' actions), this would indicate social learning. Conversely, if the effect was uniform across movies of different quality levels, suggesting that the social aspect of viewing is driving the effect, this could indicate social utility. Gilchrist and Sands' approach using weather as an instrumental variable aims to capture the exogenous variation in first-week viewership unrelated to movie quality, potentially offering insights into the social spillover effects. However, observing the confounding variable and controlling for it through selection on observables might not provide clear evidence to distinguish between these two mechanisms without further assumptions or additional data on the nature of social interactions related to moviegoing.
+
+## 7 
+
+1. **Variation in Responses Based on Information Precision**: Social learning theory suggests that the impact of observing others' actions (e.g., early viewership on later viewership) would vary depending on the precision of the information available to the observers. In contexts where there's greater uncertainty about a movie's quality, the influence of early viewers on later viewers should be more pronounced because potential viewers have more to learn from the actions of early viewers. This variation in response is consistent with social learning because it underlines the role of information acquisition in decision-making. In contrast, social utility, which derives from the shared experience of consumption, does not inherently vary with the precision of information about the product's quality.
+
+2. **Differential Impact Based on Observable Characteristics of Consumers**: Social learning models also predict that the impact of early viewership on later viewership may differ across groups with different propensities for learning. For instance, if younger viewers are more influenced by peer behavior than older viewers, one might observe stronger social spillover effects among movies targeted at younger audiences. This implication is consistent with social learning as it reflects the idea that the propensity to update beliefs based on others' actions can vary across different segments of the population. Social utility does not offer a clear reason for why such differential impacts based on consumer characteristics should exist, as the enjoyment derived from shared consumption experiences does not inherently depend on the consumers' propensity to learn from others.
+
+## 8
+
+Gilchrist and Sands proxy for realized movie quality using ratings by expert reviewers, specifically from IMDb's top 1000 voters. This group is characterized by IMDb as the 1000 people who have voted for the most titles in their ratings polls. Movies are then categorized into quality terciles based on these ratings, capturing a significant dimension of demand as top tercile movies, on average, sell significantly more tickets over the first 6 weeks compared to bottom tercile movies.
+
+They also use information about the movie's production budget. The rationale behind this is that advertising budgets, which influence the amount of information available to the public before a movie's release, are generally set as a fixed percentage of production budgets. Production budgets are thus positively correlated with the precision of prior knowledge about a movie.
+
+While these proxies are insightful and useful for empirical analysis, they may not fully capture the nuances of movie quality or the exact precision of information. Movie quality, for instance, is subjective and can be influenced by factors beyond critic ratings, such as viewer preferences and cultural impacts, which are harder to quantify. Similarly, the precision of information might be affected by factors other than advertising, such as word-of-mouth or social media influence, which are not directly tied to the production budget. 
+
+## 9 
+
+Gilchrist and Sands do not expect the conditional expectation of a movie's total viewership with respect to weather to have a causal interpretation because of the strategic behavior of film studios in choosing release dates. Film studios tend to release movies at times when they expect higher demand, both in terms of the number and quality of movies available in theaters. This strategic timing means that the observed relationship between weather and movie viewership could be confounded by the studios' anticipation of demand variations across different times of the year.
+
+The seasonality of movie viewership is driven by both underlying demand and supply-side considerations, where the supply side (i.e., the studios) takes into account expected demand in timing releases. This includes releasing certain types of movies during specific seasons to maximize viewership i.e. blockbuster movies are often released during summer and holiday seasons when audience turnout is expected to be higher. Thus, any observed correlation between weather and viewership could be influenced by these strategic release decisions, making it difficult to interpret the relationship causally. 
+
+## 10 
+
+The regression of opening weekend viewership on indicators for day of the week of the year, week, year, and holidays is not a saturated regression because it does not include every possible combination of these indicators as separate variables. A saturated model would include a unique indicator variable for every unique combination of the levels of these categorical variables, effectively allowing for a separate intercept for every combination. Given the vast number of combinations (especially when considering all weeks of all years, along with holidays), such a regression would be extremely high-dimensional and possibly exceed the number of observations available, leading to overfitting where the model perfectly fits the training data but performs poorly on new data.
+
+They likely do not consider a saturated regression because it would involve an enormous number of parameters, leading to issues with overfitting and interpretability. High-dimensional models can be computationally challenging to estimate and may require regularization techniques to obtain stable estimates.That said, one advantage of such a model is that the coefficients of a saturated model can be straightforwardly interpreted. 
+
 
 ## 11
 **11.a** A movie should appear in the dataset at least 18 times. Each has a record for the weekend (Friday, Saturday and Sunday) from the opening weekend to at least 6 weekends later (for the ones kept). The ones dropped were not in theaters for more than 6 weekends.
@@ -365,7 +428,13 @@ nfold_lasso_1se <- lasso_mod$lambda.1se
 \textit{iii}
 
 
+## 20
 
+The absence of Lord of the Rings: The Return of the King, Lord of the Rings: The Two Towers, Toy Story 3, X2: X-Men United, and Finding Nemo from the upper decile made Kuehn and Lampe suspicious. 
+
+Kuehn and Lampe collect underlying user ratings data and reconstruct the quality categories for movies, addressing anomalies they found in the categorization of movies into high and low-quality categories by Gilchrist and Sands. While maintaining the use of Gilchrist and Sands' empirical framework, Kuehn and Lampe tested additional implications of social learning models, such as the impact of sequels versus original movies on sales momentum and the effect of audience age demographics (e.g., movies with a larger share of teenage viewers) on momentum.
+
+Kuehn and Lampe find strong evidence of social learning, contradicting Gilchrist and Sands' findings which suggested a limited role for learning and emphasized network (or demand) externalities. Kuehn and Lampe's results indicate that movies in the top quality tercile exhibit significant momentum, which is not observed for movies in the bottom tercile. This pattern is consistent with social learning but does not support the presence of network externalities. Kuehn and Lampe's tests on the flexibility of prior beliefs (comparing sequels to originals) and the size of social networks (comparing movies with larger shares of teenage viewers to those with smaller shares) further support the presence of social learning. They find momentum to be significant for originals and movies with larger shares of teenage viewers, especially within the PG-13 category, reinforcing the idea that social learning mechanisms are at play.
 
 
 
@@ -377,3 +446,130 @@ nfold_lasso_1se <- lasso_mod$lambda.1se
 ```
 
 
+## 22
+The paper isan economics paper because it examines the impact of social interactions on consumer behavior, specifically how early viewership influences later movie attendance through social spillovers. This topic falls within the realm of economics as it deals with understanding how individuals make decisions based on information and experiences shared within their social networks, and how these decisions aggregate to broader market outcomes. This is of fundamental interest to the field of economics.
+
+# Problem 2
+
+## 1
+
+Given that $Y \mid X, \beta \sim \mathcal{N}\left(X \beta, \sigma^{2} I_{n}\right)$, the density of $Y$ conditional on $X$ and $\beta$ is given by the probability density function of the multivariate normal distribution. The pdf for a multivariate normal distribution with mean $\mu$ and covariance matrix $\Sigma$ is given by:
+
+$$
+f(y; \mu, \Sigma) = \frac{1}{(2\pi)^{n/2}|\Sigma|^{1/2}} \exp\left(-\frac{1}{2}({y}-\mu)^\top \Sigma^{-1} ({y}-\mu)\right)
+$$
+
+For our specific case, $\mu = X\beta$ and $\Sigma = \sigma^2 I_n$, thus the conditional density of $Y$ given $X$ and $\beta$ is:
+
+$$
+f(Y \mid X, \beta) = \frac{1}{(2\pi\sigma^2)^{n/2}} \exp\left(-\frac{1}{2\sigma^2}(Y-X\beta)^\top (Y-X\beta)\right)
+$$
+
+This expression gives the likelihood of observing $Y$ given the predictors $X$ and the regression coefficients $\beta$, under the assumption of normally distributed errors with variance $\sigma^2$.
+
+## 2
+
+Given that $\beta \sim \mathcal{N}\left(0, \tau^{2} I_{p}\right)$, the density of $\beta$ is given by the probability density function of the multivariate normal distribution, where $\mu = 0$ (a $p$-dimensional zero vector) and $\Sigma = \tau^2 I_p$ (a $p \times p$ covariance matrix where the variance of each component of $\beta$ is $\tau^2$ and all covariances are 0). The pdf for a multivariate normal distribution with mean $\mu$ and covariance matrix $\Sigma$ is:
+
+$$
+f(x; \mu, \Sigma) = \frac{1}{(2\pi)^{k/2}|\Sigma|^{1/2}} \exp\left(-\frac{1}{2}(x-\mu)^\top \Sigma^{-1} (x-\mu)\right)
+$$
+
+In our case, $k = p$, $\mu = 0$, and $\Sigma = \tau^2 I_p$, thus the density of $\beta$ is:
+
+$$
+f(\beta) = \frac{1}{(2\pi\tau^2)^{p/2}} \exp\left(-\frac{1}{2\tau^2}\beta^\top \beta\right)
+$$
+
+This expression gives the prior belief about the distribution of the regression coefficients $\beta$, assuming they are drawn from a multivariate normal distribution centered at zero with covariance $\tau^2 I_p$, indicating a belief in the shrinkage towards zero of the coefficients (consistent with the principles of Ridge Regression).
+
+
+## 3
+
+To show that the posterior likelihood of $\beta$ given $Y$ and $X$ satisfies the given expression, we'll use the densities for $f(Y \mid X, \beta)$ and $f(\beta)$ that we have previously derived and apply Bayes' theorem.
+
+Given:
+
+1. The conditional density of $Y$ given $X$ and $\beta$:
+
+$$
+f(Y \mid X, \beta) = \frac{1}{(2\pi\sigma^2)^{n/2}} \exp\left(-\frac{1}{2\sigma^2}(Y-X\beta)^\top (Y-X\beta)\right)
+$$
+
+2. The prior density of $\beta$:
+
+$$
+f(\beta) = \frac{1}{(2\pi\tau^2)^{p/2}} \exp\left(-\frac{1}{2\tau^2}\beta^\top \beta\right)
+$$
+
+3. Bayes' theorem for the posterior likelihood:
+
+$$
+f(\beta \mid Y, X)=\frac{f(Y \mid X, \beta) f(\beta)}{f(Y)}
+$$
+
+where $f(Y)$ does not depend on $\beta$ and serves as a normalizing constant.
+
+Substituting the expressions for $f(Y \mid X, \beta)$ and $f(\beta)$ into Bayes' theorem:
+
+$$
+f(\beta \mid Y, X) = \frac{\frac{1}{(2\pi\sigma^2)^{n/2}} \exp\left(-\frac{1}{2\sigma^2}(Y-X\beta)^\top (Y-X\beta)\right) \times \frac{1}{(2\pi\tau^2)^{p/2}} \exp\left(-\frac{1}{2\tau^2}\beta^\top \beta\right)}{f(Y)}
+$$
+
+Since $f(Y)$ does not depend on $\beta$, and noting that the constants involving $(2\pi\sigma^2)^{n/2}$ and $(2\pi\tau^2)^{p/2}$ do not depend on $\beta$, we can denote all the terms that do not depend on $\beta$ by a constant $C'$. Thus, the expression simplifies to:
+
+$$
+f(\beta \mid Y, X) = C' \exp\left(-\frac{1}{2\sigma^2}(Y-X\beta)^\top (Y-X\beta) - \frac{1}{2\tau^2}\beta^\top \beta\right)
+$$
+
+Here, $C'$ is a constant that may involve factors from the normalizing constant $f(Y)$ and the constants pulled out of the exponential terms but crucially does not depend on $\beta$.
+
+Given that $C$ is defined as a constant that does not depend on $\beta$, we can express $C'$ simply as $C$ for clarity. Therefore, we show that:
+
+$$
+f(\beta \mid Y, X) = C \exp\left(-\frac{1}{2\sigma^2}(Y-X\beta)^\top (Y-X\beta) - \frac{1}{2\tau^2}\beta^\top \beta\right)
+$$
+
+## 4
+
+To conclude that the $\beta$ which maximizes the posterior likelihood (the mode of the posterior distribution) is given by the solution to the specified optimization problem, we start with the expression for the posterior likelihood derived in the previous question:
+
+$$
+f(\beta \mid Y, X) = C \exp \left(-\frac{1}{2 \sigma^{2}}(Y-X \beta)^{t}(Y-X \beta)-\frac{1}{2 \tau^{2}} \beta^{t} \beta\right)
+$$
+
+Maximizing the posterior likelihood $f(\beta \mid Y, X)$ with respect to $\beta$ is equivalent to minimizing the exponent's argument because the exponential function is monotonically increasing. Thus, we focus on minimizing the negative exponent in the expression, which involves two terms:
+
+1. The term $-\frac{1}{2 \sigma^{2}}(Y-X \beta)^{t}(Y-X \beta)$ corresponds to the squared error between the observed and predicted values, scaled by the variance $\sigma^2$.
+
+2. The term $-\frac{1}{2 \tau^{2}} \beta^{t} \beta$ corresponds to the penalty on the size of $\beta$, scaled by the variance $\tau^2$.
+
+Dropping the constants and the negative sign, the problem of maximizing the posterior likelihood can be restated as minimizing the expression:
+
+$$
+\frac{1}{2 \sigma^{2}}(Y-X \beta)^{t}(Y-X \beta) + \frac{1}{2 \tau^{2}} \beta^{t} \beta
+$$
+
+Multiplying through by $2\sigma^2$ (which does not change the location of the minimum) to simplify, we get:
+
+$$
+(Y-X \beta)^{t}(Y-X \beta) + \frac{\sigma^{2}}{\tau^{2}} \beta^{t} \beta
+$$
+
+Recognizing that $\beta^{t} \beta = \|\beta\|_{2}^{2}$, the optimization problem becomes:
+
+$$
+\min _{\beta}(Y-X \beta)^{t}(Y-X \beta) + \frac{\sigma^{2}}{\tau^{2}}\|\beta\|_{2}^{2}
+$$
+
+This is precisely the ridge regression optimization problem, where $(Y-X \beta)^{t}(Y-X \beta)$ represents the least squares error term, and $\frac{\sigma^{2}}{\tau^{2}}\|\beta\|_{2}^{2}$ is the ridge penalty on the size of $\beta$, with the penalty strength controlled by the ratio $\frac{\sigma^{2}}{\tau^{2}}$. Thus, the $\beta$ that maximizes the posterior likelihood under the Bayesian interpretation is indeed given by the solution to this optimization problem, highlighting the connection between Bayesian inference and ridge regression.
+
+## 5
+
+In Bayesian inference, we begin with a prior belief about the parameters (in this case, $\beta$) of our linear model. This belief is quantified by assuming that $\beta$ follows a normal distribution centered around zero, with its dispersion controlled by $\tau^2$. This assumption reflects our expectation that the true values of the regression coefficients are likely to be small or close to zero, enforcing a form of regularization even before observing the data.
+
+When we observe the data (represented by $Y$ and $X$), we update our beliefs about $\beta$ by calculating the posterior distribution, which combines our prior belief and the likelihood of observing the data given $\beta$. The likelihood of the data given $\beta$ is also modeled using a normal distribution, where the variance $\sigma^2$ captures the uncertainty or noise in the observations.
+
+Maximizing the posterior likelihood of $\beta$, or equivalently, finding the mode of the posterior distribution, involves adjusting our estimate of $\beta$ to best fit the observed data while also adhering to our initial regularization imposed by the prior. This balance is captured mathematically by an optimization problem that seeks to minimize the sum of two terms: one representing the fit of the model to the data (the least squares error term) and the other representing the size of the coefficients (the ridge penalty term), weighted by the ratio of the variance of the observation noise to the variance of the prior on $\beta$ ($\frac{\sigma^2}{\tau^2}$).
+
+This optimization problem is precisely that of ridge regression, which seeks to find regression coefficients that not only fit the data well but are also small in magnitude, to prevent overfitting and improve the generalizability of the model. The strength of the regularization is controlled by the ratio $\frac{\sigma^2}{\tau^2}$, linking the Bayesian interpretation directly to the regularization parameter in ridge regression. This parameter balance reflects the trade-off between fitting the data closely (minimizing prediction error) and keeping the model simple and robust to new data (minimizing the size of the coefficients).
