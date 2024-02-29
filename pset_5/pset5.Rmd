@@ -181,13 +181,14 @@ weather
 
 ```{r}
 weather_film <- film |> 
-  left_join(weather,
+  left_join(weather |> #all variables except the saturday variable
+              select(-c("www_sat_date")),
             #combine on dates, automatically filters out dates that don't match
-            by = c("movie_date" = "www_date",
-                   "sat_day" = "www_sat_date"))
+            by = c("movie_date" = "www_date"))
 
-weather_film |> 
-  select(movie_date, sat_day, contains("www"))
+#test <- weather_film |> 
+#  arrange(title) |> 
+#  select(title, movie_date, sat_day, contains("www"))
 ```
 ## 15
 ```{r warning = FALSE}
@@ -319,19 +320,53 @@ bkwd_mod <- lm(as.formula(bkwd_glue), data = new_weather_film_wk1)
 **17.d**
 \textit{i}
 ```{r}
+ridge_mod <- cv.glmnet(
+  x = as.matrix(new_weather_film_wk1 |>
+                select(all_of(abnormal_weather_wk1_names))),
+  y = new_weather_film_wk1 |>
+    pull(abnormal_viewership_wk1), #pull gets the numeric values
+  alpha = 0, # Ridge penalty
+  nfolds = 5 # 5 fold cross validation
+)
+
+#lambda that minimizes the cross validation error
+nfold_ridge <- ridge_mod$lambda.min
+
+coefs_nfold_ridge <- coef(ridge_mod, s = nfold_ridge)
+
+```
+\textit{ii}
+```{r}
+# Find lambda within 1 standard deviation of the minimum lambda (storind estimates for now. Will predict with model later)
+nfold_ridge_1se <- ridge_mod$lambda.1se
+
+coefs_nfold_ridge_1se <- coef(ridge_mod, s = nfold_ridge_1se)
+```
+**17.e**
+\textit{i}
+```{r}
 lasso_mod <- cv.glmnet(
   x = as.matrix(new_weather_film_wk1 |>
-                   select(all_of(abnormal_weather_wk1_names))),
+                select(all_of(abnormal_weather_wk1_names))),
   y = new_weather_film_wk1 |>
     pull(abnormal_viewership_wk1), #pull gets the numeric values
   alpha = 1, # Lasso penalty
   nfolds = 5 # 5 fold cross validation
 )
 
-new_weather_film_wk1 |> 
-  mutate(pred = predict(lasso_mod, as.matrix(new_weather_film_wk1 |>
-                   select(all_of(abnormal_weather_wk1_names))), s = "lambda.min")) 
+#lambda that minimizes the cross validation error
+nfold_lasso = lasso_mod$lambda.min
 ```
+\textit{ii}
+```{r}
+# Find lambda within 1 standard deviation of the minimum lambda
+nfold_lasso_1se <- lasso_mod$lambda.1se
+```
+\textit{iii}
+
+
+
+
 
 
 
